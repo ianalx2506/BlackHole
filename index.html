@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABISMO 2.0 | Explorador de Agujeros Negros</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Space+Grotesk:wght@300;400;600;700&display=swap');
+:root{--bg:#03030b;--panel:#0e0c25d9;--line:#ffffff1c;--txt:#f8f5ff;--muted:#aaa6c8;--cyan:#3ceaff;--purple:#a16bff;--pink:#ff48b8;--orange:#ff9e4a}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{background:var(--bg);color:var(--txt);font-family:"Space Grotesk",Arial;overflow-x:hidden}
+#space{position:fixed;inset:0;z-index:-5;background:radial-gradient(ellipse at 50% 40%,#211344 0,transparent 45%),radial-gradient(circle at 10% 90%,#00b4ff16,transparent 25%),#03030b}
+canvas#stars,canvas#dust{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:-4}
+#glow{position:fixed;width:420px;height:420px;border-radius:50%;pointer-events:none;z-index:-2;transform:translate(-50%,-50%);background:radial-gradient(circle,#8b4cff20,transparent 68%)}
+.progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--cyan),var(--purple),var(--pink));z-index:2000}
+nav{position:fixed;top:13px;left:50%;transform:translateX(-50%);width:min(1180px,calc(100% - 26px));padding:10px 15px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:19px;background:#03030bd9;backdrop-filter:blur(22px);z-index:1000}
+.logo{font:800 15px Orbitron;letter-spacing:3px}.logo b{color:var(--cyan)}
+.navlinks{display:flex;gap:4px;list-style:none}.navlinks a{color:#c9c5df;text-decoration:none;font-size:11px;padding:9px;border-radius:10px}.navlinks a:hover,.navlinks a.active{background:#ffffff13;color:white}
+.menu{display:none;background:none;border:0;color:white;font-size:24px}
+section{width:min(1180px,calc(100% - 34px));margin:auto;padding:100px 0}
+.hero{min-height:100vh;display:grid;place-items:center;padding-top:130px}
+.hero-grid{width:100%;display:grid;grid-template-columns:1.05fr .95fr;gap:35px;align-items:center}
+.eyebrow{display:inline-flex;gap:9px;align-items:center;padding:7px 12px;border:1px solid #3ceaff40;background:#3ceaff09;border-radius:99px;color:#a6f6ff;font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:pulse 1.4s infinite}
+h1{font:800 clamp(48px,8vw,105px)/.92 Orbitron;letter-spacing:-5px}
+.gradient{background:linear-gradient(100deg,#fff,#bca0ff 38%,#ff4ab8 72%,#42eaff);color:transparent;background-clip:text}
+.hero p{color:var(--muted);line-height:1.85;font-size:16px;margin:24px 0;max-width:640px}
+.buttons{display:flex;flex-wrap:wrap;gap:10px}.btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:white;padding:13px 17px;border-radius:13px;font-size:12px;font-weight:700;border:1px solid var(--line);background:#ffffff08;cursor:pointer;transition:.25s}
+.btn.primary{background:linear-gradient(105deg,#694bff,#ad37ff,#ff329b);border-color:transparent;box-shadow:0 10px 32px #943cff42}.btn:hover{transform:translateY(-3px)}
+.hole-wrap{aspect-ratio:1;max-width:570px;margin:auto;position:relative;display:grid;place-items:center}
+.hole{width:73%;height:73%;position:relative;border-radius:50%;display:grid;place-items:center;animation:float 6s ease-in-out infinite}
+.hole:before{content:"";position:absolute;width:48%;height:48%;border-radius:50%;background:#000;box-shadow:0 0 35px 12px #000,0 0 90px 24px #7e38ff35;z-index:5}
+.disk{position:absolute;width:104%;height:31%;border-radius:50%;transform:rotate(-17deg);background:radial-gradient(ellipse,transparent 0 16%,#fff1c4 18%,#ffbd50 25%,#ff6725 39%,#e52a91 56%,#773aff 71%,transparent 73%);filter:blur(1px);box-shadow:0 0 26px #ff6a24,0 0 80px #ff3ba955;animation:spin 10s linear infinite;z-index:2}
+.disk.back{height:20%;transform:rotate(17deg);opacity:.62;filter:blur(5px);animation:rev 14s linear infinite}
+.lens{position:absolute;width:65%;height:65%;border-radius:50%;border:3px solid #ffe1a066;box-shadow:inset 0 0 30px #ff963255;z-index:3}
+.photon{position:absolute;width:82%;height:82%;border:1px dashed #75efff44;border-radius:50%;animation:spin 20s linear infinite}
+.hud{position:absolute;inset:3%;border:1px solid #ffffff15;border-radius:50%;animation:rev 35s linear infinite}
+.hud:before,.hud:after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 18px var(--cyan)}.hud:before{top:8%;left:30%}.hud:after{bottom:10%;right:17%;background:var(--pink)}
+.tag{position:absolute;font-size:10px;color:#c8c3dc;border:1px solid var(--line);background:#070714dd;padding:8px 10px;border-radius:10px}.tag.a{top:12%;left:0}.tag.b{right:0;bottom:20%}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:32px}.stat{padding:16px;border:1px solid var(--line);border-radius:16px;background:#ffffff06}.stat strong{font:700 21px Orbitron;display:block;margin-bottom:6px}.stat span{font-size:10px;color:#918daa}
+.title{font:700 clamp(27px,4.3vw,52px)/1.08 Orbitron;letter-spacing:-2px;margin-bottom:14px}.title span{color:var(--purple)}
+.subtitle{color:var(--muted);line-height:1.85;max-width:760px;margin-bottom:38px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{position:relative;overflow:hidden;padding:25px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,#191433bb,#080715d9);box-shadow:0 25px 70px #0003;transition:transform .3s,border-color .3s}
+.card:hover{border-color:#a16bff66}.card:before{content:"";position:absolute;width:150px;height:150px;border-radius:50%;right:-80px;top:-85px;background:radial-gradient(circle,#a16bff3b,transparent 70%)}
+.icon{width:46px;height:46px;display:grid;place-items:center;border-radius:14px;margin-bottom:18px;background:linear-gradient(135deg,#3ceaff1c,#a16bff25);border:1px solid #ffffff18;font-size:22px}
+.card h3{font:600 16px Orbitron;margin-bottom:10px}.card p{color:#aaa6c3;line-height:1.8;font-size:13px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+.diagram{min-height:500px;position:relative;display:grid;place-items:center;border:1px solid var(--line);border-radius:27px;overflow:hidden;background:radial-gradient(circle,#7838ff20,transparent 42%),#070714aa}
+.core{width:125px;height:125px;border-radius:50%;background:#000;box-shadow:0 0 0 8px #ff8d3b22,0 0 0 25px #ff4dbd12,0 0 80px #8c46ff70;z-index:2}
+.ring{position:absolute;border:1px solid #ffffff20;border-radius:50%;transform:rotate(-18deg)}.r1{width:245px;height:100px;border-color:#ffa04666}.r2{width:400px;height:160px;border-color:#ff4bbd44}.r3{width:560px;height:230px;border-color:#4b96ff30}
+.label{position:absolute;padding:8px 10px;font-size:10px;border-radius:9px;background:#05050fdc;border:1px solid var(--line);color:#ddd9ee}.la{top:16%;right:8%}.lb{top:46%;right:2%}.lc{bottom:15%;left:7%}.ld{top:50%;left:4%}
+.info-list{display:grid;gap:11px}.info{padding:17px;border:1px solid var(--line);border-radius:15px;background:#ffffff06}.info b{display:block;margin-bottom:6px}.info span{color:var(--muted);font-size:13px;line-height:1.7}
+.timeline{position:relative}.timeline:before{content:"";position:absolute;left:22px;top:0;bottom:0;width:1px;background:linear-gradient(var(--cyan),var(--purple),var(--pink),transparent)}
+.event{position:relative;padding:0 0 44px 68px}.event:before{content:"";position:absolute;left:13px;top:3px;width:18px;height:18px;border-radius:50%;border:2px solid var(--cyan);background:#050512;box-shadow:0 0 18px #3ceaff66}
+.year{font:600 11px Orbitron;color:var(--cyan);letter-spacing:2px;margin-bottom:8px}.event h3{font-size:22px;margin-bottom:9px}.event p{color:var(--muted);line-height:1.8;max-width:780px}
+.types{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.type{min-height:250px;padding:22px;border:1px solid var(--line);border-radius:21px;background:linear-gradient(150deg,#ffffff0b,#ffffff02);position:relative;overflow:hidden}.type:after{content:"";position:absolute;width:160px;height:160px;border-radius:50%;right:-90px;bottom:-90px;background:radial-gradient(circle,#a16bff33,transparent 70%)}
+.mini{width:62px;height:62px;border-radius:50%;margin-bottom:18px;background:#000;border:8px solid #ff713622;box-shadow:0 0 30px #974aff55}.type h3{font:600 14px Orbitron;margin-bottom:10px}.type p{font-size:12px;color:var(--muted);line-height:1.75}
+.callout{padding:30px;border:1px solid #3ceaff28;border-radius:27px;background:radial-gradient(circle at 12% 15%,#3ceaff12,transparent 30%),radial-gradient(circle at 90% 80%,#ff3cac12,transparent 30%),#0a0a1eaa;display:grid;grid-template-columns:1fr auto;gap:25px;align-items:center}.callout p{color:var(--muted);line-height:1.8}.symbol{font:700 clamp(40px,7vw,84px) Orbitron;text-shadow:0 0 35px #a16bff66}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:18px;background:#080817aa}table{border-collapse:collapse;width:100%;min-width:620px}th,td{padding:15px 17px;text-align:left;border-bottom:1px solid #ffffff10;font-size:13px}th{font:600 11px Orbitron;color:var(--cyan);background:#ffffff06}td{color:#c5c1d9;line-height:1.6}tr:last-child td{border:0}
+.simulator{border:1px solid var(--line);border-radius:25px;padding:21px;background:#090819cc}.sim-head{display:flex;justify-content:space-between;gap:15px;margin-bottom:14px}.sim-head h3{font:600 14px Orbitron}.sim-head span{font-size:12px;color:var(--cyan)}
+#simCanvas{display:block;width:100%;height:380px;border-radius:17px;border:1px solid #ffffff12;background:#010107}
+input[type=range]{width:100%;accent-color:var(--purple);margin:18px 0 8px}.hint{font-size:11px;color:#928eab;line-height:1.7}
+.quiz{display:grid;grid-template-columns:1fr 1fr;gap:15px}.question{padding:22px;border:1px solid var(--line);border-radius:20px;background:#ffffff05}.question h3{font-size:16px;line-height:1.5;margin-bottom:16px}.answers{display:grid;gap:8px}.answer{padding:11px 13px;border-radius:11px;border:1px solid var(--line);background:#ffffff04;color:#c7c3d8;text-align:left;cursor:pointer;font:inherit;font-size:13px}.answer:hover{background:#a16bff20;color:white}.answer.correct{border-color:#2effb3;background:#2effb318;color:#8fffd2}.answer.wrong{border-color:#ff4f8a;background:#ff4f8a18;color:#ff9dbd}.answer:disabled{cursor:default}
+.score{text-align:center;margin-top:24px;color:#aaa6c3}.score strong{font:700 27px Orbitron;color:white}
+.accordion{display:grid;gap:10px}.acc{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#ffffff05}.acc button{width:100%;text-align:left;background:none;border:0;color:white;padding:17px 19px;font:600 14px "Space Grotesk";cursor:pointer;display:flex;justify-content:space-between;gap:15px}.acc .body{display:none;color:var(--muted);padding:0 19px 19px;line-height:1.8;font-size:13px}.acc.open .body{display:block}.plus{color:var(--cyan);font-size:20px}
+footer{padding:45px 20px 65px;text-align:center;border-top:1px solid #ffffff0d;color:#77738f;font-size:12px;line-height:1.9}footer b{color:#c8c2e0}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .75s,transform .75s}.reveal.visible{opacity:1;transform:none}
+#topBtn{position:fixed;right:19px;bottom:19px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#111026dd;color:white;font-size:20px;cursor:pointer;opacity:0;pointer-events:none;transition:.25s;z-index:900}#topBtn.show{opacity:1;pointer-events:auto}
+@keyframes pulse{50%{opacity:.25;transform:scale(.65)}}@keyframes float{50%{transform:translateY(-13px)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes rev{to{transform:rotate(-360deg)}}
+@media(max-width:950px){.hero-grid,.split{grid-template-columns:1fr}.hole-wrap{max-width:480px}.cards{grid-template-columns:1fr 1fr}.types{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){nav{padding:10px 13px}.menu{display:block}.navlinks{display:none;position:absolute;top:58px;left:0;right:0;padding:10px;border:1px solid var(--line);border-radius:16px;background:#050512f5;flex-direction:column}.navlinks.open{display:flex}.navlinks a{display:block;font-size:13px;padding:12px}.hero{padding-top:130px}h1{letter-spacing:-3px}.hero p{font-size:14px}.stats,.cards,.types,.quiz{grid-template-columns:1fr}.callout{grid-template-columns:1fr}.diagram{min-height:380px}.event{padding-left:55px}.timeline:before{left:17px}.event:before{left:8px}section{width:calc(100% - 25px);padding:75px 0}#simCanvas{height:290px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="space"></div><canvas id="stars"></canvas><canvas id="dust"></canvas><div id="glow"></div><div class="progress" id="progress"></div>
+<nav><div class="logo">ABISMO<b>°</b></div><button class="menu" id="menu" aria-label="Abrir menú">☰</button>
+<ul class="navlinks" id="navlinks">
+<li><a href="#inicio">Inicio</a></li><li><a href="#concepto">Concepto</a></li><li><a href="#anatomia">Anatomía</a></li><li><a href="#formacion">Formación</a></li><li><a href="#tipos">Tipos</a></li><li><a href="#fisica">Física</a></li><li><a href="#observacion">Observación</a></li><li><a href="#simulacion">Simulación</a></li><li><a href="#quiz">Quiz</a></li>
+</ul></nav><button id="topBtn" aria-label="Volver arriba">↑</button>
+
+<main>
+<section class="hero" id="inicio"><div class="hero-grid"><div class="reveal">
+<div class="eyebrow"><span class="dot"></span> Expedición al universo extremo</div>
+<h1>AGUJEROS<br><span class="gradient">NEGROS</span></h1>
+<p>Hay lugares donde el espacio y el tiempo se comportan de formas que desafían nuestra intuición. Los agujeros negros son regiones del espacio-tiempo con una gravedad tan intensa que, una vez cruzado su horizonte de sucesos, ni siquiera la luz puede escapar.</p>
+<div class="buttons"><a class="btn primary" href="#concepto">INICIAR EXPLORACIÓN ↓</a><a class="btn" href="#simulacion">EXPERIMENTAR</a></div>
+<div class="stats"><div class="stat"><strong>c</strong><span>Velocidad de la luz</span></div><div class="stat"><strong>4D</strong><span>Espacio-tiempo</span></div><div class="stat"><strong>∞</strong><span>Misterios por descubrir</span></div></div>
+</div><div class="hole-wrap reveal"><div class="hole"><div class="photon"></div><div class="disk"></div><div class="disk back"></div><div class="lens"></div><div class="hud"></div></div><div class="tag a">HORIZONTE DE SUCESOS</div><div class="tag b">DISCO DE ACRECIÓN</div></div></div></section>
+
+<section id="concepto"><div class="reveal"><div class="eyebrow">01 / El concepto</div><h2 class="title">¿Qué es un <span>agujero negro</span>?</h2><p class="subtitle">No es un túnel ni un vacío que absorbe todo a su alrededor. Es una región del espacio-tiempo en la que la materia y la energía están concentradas de tal manera que se forma un horizonte de sucesos.</p></div>
+<div class="cards">
+<article class="card reveal"><div class="icon">🌀</div><h3>Gravedad extrema</h3><p>La masa curva el espacio-tiempo. Cerca de un agujero negro, esa curvatura es tan intensa que las rutas que puede seguir la luz quedan atrapadas una vez se cruza el horizonte.</p></article>
+<article class="card reveal"><div class="icon">💡</div><h3>Una frontera invisible</h3><p>El horizonte de sucesos no es una superficie sólida. Es un límite causal: desde su interior no se puede enviar una señal al exterior.</p></article>
+<article class="card reveal"><div class="icon">⏳</div><h3>El tiempo cambia</h3><p>Para un observador lejano, los relojes cercanos a un campo gravitatorio intenso parecen avanzar más despacio. Esta diferencia se conoce como dilatación gravitacional del tiempo.</p></article>
+</div></section>
+
+<section id="anatomia"><div class="split"><div class="diagram reveal"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="core"></div><div class="label la">DISCO DE ACRECIÓN</div><div class="label lb">HORIZONTE</div><div class="label lc">REGIÓN EXTERIOR</div><div class="label ld">SOMBRA</div></div>
+<div class="reveal"><div class="eyebrow">02 / Anatomía</div><h2 class="title">Las partes del <span>abismo</span></h2><p class="subtitle">La imagen de un agujero negro suele mostrar la luz de la materia que lo rodea y la sombra producida por la curvatura de la luz.</p>
+<div class="info-list">
+<div class="info"><b>Horizonte de sucesos</b><span>La frontera de no retorno. Su tamaño depende de la masa y de las propiedades del agujero negro.</span></div>
+<div class="info"><b>Disco de acreción</b><span>Gas y polvo orbitan, chocan y se calientan. El material puede emitir radiación muy energética antes de caer.</span></div>
+<div class="info"><b>Esfera de fotones</b><span>Región en la que la gravedad puede permitir órbitas circulares de luz, aunque son inestables en el caso ideal no rotatorio.</span></div>
+<div class="info"><b>Sombra</b><span>La zona oscura aparente causada por la captura de luz y la desviación de los rayos luminosos alrededor del objeto.</span></div>
+<div class="info"><b>Singularidad clásica</b><span>La relatividad general predice condiciones extremas en el interior. Una descripción completa probablemente requiere física cuántica de la gravedad.</span></div>
+</div></div></div></section>
+
+<section id="formacion"><div class="reveal"><div class="eyebrow">03 / Nacimiento</div><h2 class="title">¿Cómo se <span>forman</span>?</h2><p class="subtitle">Hay varios caminos posibles para que se forme un agujero negro. La ruta depende de la masa de la estrella, su entorno y la historia del sistema.</p></div>
+<div class="timeline">
+<div class="event reveal"><div class="year">ETAPA 01</div><h3>Una estrella masiva vive</h3><p>Durante millones de años, la estrella mantiene un equilibrio entre la gravedad que la comprime y la presión generada por las reacciones nucleares de su interior.</p></div>
+<div class="event reveal"><div class="year">ETAPA 02</div><h3>Se agota el combustible</h3><p>Cuando ya no puede sostenerse mediante la fusión, el núcleo pierde presión de soporte y comienza a contraerse.</p></div>
+<div class="event reveal"><div class="year">ETAPA 03</div><h3>Colapso gravitatorio</h3><p>Si el núcleo remanente supera los límites que pueden sostener una estrella de neutrones, puede continuar colapsando y formar un agujero negro.</p></div>
+<div class="event reveal"><div class="year">ETAPA 04</div><h3>Un objeto oscuro, un entorno brillante</h3><p>El agujero negro puede permanecer relativamente aislado o atraer materia de una estrella compañera. El gas caliente que cae puede hacerlo detectable.</p></div>
+</div></section>
+
+<section id="tipos"><div class="reveal"><div class="eyebrow">04 / Clasificación</div><h2 class="title">Cuatro familias <span>posibles</span></h2><p class="subtitle">La clasificación por masa es una forma útil de organizarlos. Algunas categorías, como los agujeros negros primordiales, siguen siendo hipotéticas.</p></div>
+<div class="types">
+<article class="type reveal"><div class="mini"></div><h3>ESTELARES</h3><p>Se originan principalmente por el colapso de estrellas masivas. Suelen tener unas pocas a decenas de masas solares, aunque se conocen objetos más masivos.</p></article>
+<article class="type reveal"><div class="mini"></div><h3>INTERMEDIOS</h3><p>Se ubican entre los estelares y los supermasivos. Existen candidatos, y su formación y abundancia son áreas activas de investigación.</p></article>
+<article class="type reveal"><div class="mini"></div><h3>SUPERMASIVOS</h3><p>Con millones o miles de millones de masas solares. Se encuentran en los centros de muchas galaxias, incluida la Vía Láctea.</p></article>
+<article class="type reveal"><div class="mini"></div><h3>PRIMORDIALES</h3><p>Objetos hipotéticos que podrían haberse formado en el universo temprano a partir de regiones muy densas. Aún no hay detección confirmada.</p></article>
+</div></section>
+
+<section id="fisica"><div class="reveal"><div class="eyebrow">05 / Física extrema</div><h2 class="title">Las reglas del <span>espacio-tiempo</span></h2><p class="subtitle">Estas ideas ayudan a entender por qué los agujeros negros son laboratorios naturales para estudiar la gravedad.</p></div>
+<div class="cards">
+<article class="card reveal"><div class="icon">🧭</div><h3>Relatividad general</h3><p>Describe la gravedad como geometría del espacio-tiempo. La masa y la energía influyen en esa geometría, y los objetos se mueven siguiendo sus trayectorias.</p></article>
+<article class="card reveal"><div class="icon">⌛</div><h3>Dilatación temporal</h3><p>Un reloj situado en un campo gravitatorio más intenso puede acumular menos tiempo que otro reloj lejano. No es una ilusión: es una diferencia física medible.</p></article>
+<article class="card reveal"><div class="icon">🌈</div><h3>Lente gravitacional</h3><p>La gravedad desvía la luz. Un agujero negro puede distorsionar la imagen de estrellas y del disco que se encuentra detrás o alrededor.</p></article>
+<article class="card reveal"><div class="icon">⚡</div><h3>Jets relativistas</h3><p>Algunos sistemas con agujeros negros lanzan chorros estrechos de partículas a velocidades cercanas a la de la luz. Se relacionan con campos magnéticos y discos de acreción.</p></article>
+<article class="card reveal"><div class="icon">🌊</div><h3>Ondas gravitacionales</h3><p>Cuando dos agujeros negros orbitan y se fusionan, pueden generar ondulaciones del espacio-tiempo que llegan hasta detectores terrestres.</p></article>
+<article class="card reveal"><div class="icon">🔥</div><h3>Radiación de Hawking</h3><p>La teoría cuántica de campos en espacio-tiempo curvo predice que los agujeros negros pueden emitir una radiación extremadamente débil y perder masa lentamente.</p></article>
+</div></section>
+
+<section><div class="reveal"><div class="eyebrow">06 / Comparación</div><h2 class="title">Agujero negro vs. <span>estrella de neutrones</span></h2><p class="subtitle">Ambos pueden ser remanentes compactos de estrellas, pero la física que los sostiene y sus propiedades son distintas.</p></div>
+<div class="table-wrap reveal"><table><thead><tr><th>CARACTERÍSTICA</th><th>AGUJERO NEGRO</th><th>ESTRELLA DE NEUTRONES</th></tr></thead><tbody>
+<tr><td>Soporte</td><td>No existe una superficie material que detenga el colapso dentro del horizonte.</td><td>La materia ultradensa y la presión cuántica ayudan a sostener el objeto.</td></tr>
+<tr><td>Superficie</td><td>No tiene una superficie sólida visible; el horizonte es una frontera causal.</td><td>Tiene una superficie física, aunque extrema.</td></tr>
+<tr><td>Luz</td><td>La luz desde dentro del horizonte no puede salir.</td><td>Puede emitir radiación desde su superficie y magnetosfera.</td></tr>
+<tr><td>Detección</td><td>Se estudia por su entorno, movimientos cercanos, ondas gravitacionales y efectos gravitatorios.</td><td>Puede detectarse como púlsar, fuente de rayos X u otras señales.</td></tr>
+</tbody></table></div></section>
+
+<section><div class="callout reveal"><div><div class="eyebrow">Dato cósmico</div><p>Si el Sol fuera reemplazado por un agujero negro con exactamente la misma masa, la órbita terrestre sería casi la misma. Pero desaparecerían la luz y el calor del Sol, y la Tierra se enfriaría. Un agujero negro no “aspira” automáticamente todo lo que lo rodea.</p></div><div class="symbol">M☉</div></div></section>
+
+<section id="observacion"><div class="reveal"><div class="eyebrow">07 / Evidencia</div><h2 class="title">Cómo los <span>observamos</span></h2><p class="subtitle">No vemos directamente el interior de un agujero negro. Lo estudiamos por las huellas que deja en su entorno y por señales que viajan hasta nuestros instrumentos.</p></div>
+<div class="cards">
+<article class="card reveal"><div class="icon">📡</div><h3>Radiación del gas</h3><p>La materia muy caliente de un disco de acreción puede emitir rayos X, luz visible y ondas de radio. Estas señales permiten estudiar sistemas activos.</p></article>
+<article class="card reveal"><div class="icon">🪐</div><h3>Órbitas estelares</h3><p>El movimiento de estrellas alrededor de una masa invisible permite estimar su masa y localizar objetos compactos, como el agujero negro del centro galáctico.</p></article>
+<article class="card reveal"><div class="icon">〰️</div><h3>Ondas gravitacionales</h3><p>Detectores como LIGO, Virgo y KAGRA miden diminutas variaciones producidas por eventos violentos, incluidas fusiones de agujeros negros.</p></article>
+</div></section>
+
+<section><div class="reveal"><div class="eyebrow">08 / Cronología</div><h2 class="title">Un siglo de <span>descubrimientos</span></h2><p class="subtitle">De las ecuaciones a las observaciones: algunos hitos que transformaron nuestra comprensión.</p></div>
+<div class="timeline">
+<div class="event reveal"><div class="year">1915</div><h3>La relatividad general</h3><p>Einstein presenta la teoría que describe la gravedad como curvatura del espacio-tiempo.</p></div>
+<div class="event reveal"><div class="year">1916</div><h3>La solución de Schwarzschild</h3><p>Karl Schwarzschild obtiene una solución de las ecuaciones de Einstein para un campo gravitatorio esférico.</p></div>
+<div class="event reveal"><div class="year">1960–1970</div><h3>La astronomía de rayos X</h3><p>Se identifican fuentes compactas y sistemas candidatos, mientras la teoría de agujeros negros se desarrolla rápidamente.</p></div>
+<div class="event reveal"><div class="year">2015</div><h3>Primera detección de ondas gravitacionales</h3><p>LIGO observa una señal producida por la fusión de dos agujeros negros, inaugurando la astronomía de ondas gravitacionales.</p></div>
+<div class="event reveal"><div class="year">2019</div><h3>La sombra de M87*</h3><p>El Event Horizon Telescope publica la primera imagen de la sombra de un agujero negro supermasivo en la galaxia M87.</p></div>
+<div class="event reveal"><div class="year">2022</div><h3>Sagitario A*</h3><p>El Event Horizon Telescope presenta la imagen del agujero negro supermasivo situado en el centro de la Vía Láctea.</p></div>
+</div></section>
+
+<section id="simulacion"><div class="reveal"><div class="eyebrow">09 / Laboratorio interactivo</div><h2 class="title">Juega con la <span>gravedad</span></h2><p class="subtitle">Cambia la masa para modificar la visualización de la malla espacial y el tamaño del horizonte. Esta animación es ilustrativa, no una simulación relativista exacta.</p></div>
+<div class="simulator reveal"><div class="sim-head"><h3>CAMPO GRAVITATORIO VISUAL</h3><span id="massValue">Masa visual: 50%</span></div><canvas id="simCanvas"></canvas><input id="mass" type="range" min="1" max="100" value="50" aria-label="Intensidad visual de la masa"><div class="hint">Desliza para cambiar la intensidad. Observa cómo se deforma la malla alrededor del centro.</div><div class="buttons" style="margin-top:15px"><button class="btn primary" id="pauseBtn">⏸ Pausar animación</button><button class="btn" id="resetBtn">↺ Reiniciar</button></div></div></section>
+
+<section id="quiz"><div class="reveal"><div class="eyebrow">10 / Desafío</div><h2 class="title">¿Qué tanto sabes del <span>abismo</span>?</h2><p class="subtitle">Responde y comprueba tus conocimientos. Puedes reiniciar el cuestionario cuando quieras.</p></div>
+<div class="quiz" id="quizBox">
+<div class="question" data-answer="1"><h3>1. ¿Qué marca el horizonte de sucesos?</h3><div class="answers"><button class="answer">El centro visible</button><button class="answer">Una frontera de no retorno</button><button class="answer">El borde de una galaxia</button><button class="answer">Una zona de formación estelar</button></div></div>
+<div class="question" data-answer="0"><h3>2. ¿Cómo puede formarse un agujero negro estelar?</h3><div class="answers"><button class="answer">Por el colapso de una estrella muy masiva</button><button class="answer">Por el choque de dos planetas</button><button class="answer">Por una luna que se enfría</button><button class="answer">Por la evaporación de un cometa</button></div></div>
+<div class="question" data-answer="2"><h3>3. ¿Qué teoría describe la gravedad como curvatura del espacio-tiempo?</h3><div class="answers"><button class="answer">Teoría de conjuntos</button><button class="answer">Óptica geométrica</button><button class="answer">Relatividad general</button><button class="answer">Teoría celular</button></div></div>
+<div class="question" data-answer="3"><h3>4. ¿Qué detectó LIGO en 2015?</h3><div class="answers"><button class="answer">La primera galaxia</button><button class="answer">Una estrella nueva</button><button class="answer">Una fotografía del Sol</button><button class="answer">Ondas gravitacionales de una fusión de agujeros negros</button></div></div>
+<div class="question" data-answer="1"><h3>5. ¿Qué es un disco de acreción?</h3><div class="answers"><button class="answer">Una superficie sólida del agujero negro</button><button class="answer">Materia caliente que orbita y puede caer hacia él</button><button class="answer">Una galaxia completa</button><button class="answer">Una onda de sonido</button></div></div>
+<div class="question" data-answer="0"><h3>6. ¿Cuál es el agujero negro del centro de la Vía Láctea?</h3><div class="answers"><button class="answer">Sagitario A*</button><button class="answer">M87*</button><button class="answer">Betelgeuse</button><button class="answer">Polaris</button></div></div>
+</div>
+<div class="score">Resultado: <strong id="score">0 / 6</strong><div id="scoreMsg" style="margin-top:10px;font-size:13px"></div><button class="btn" id="quizReset" style="margin-top:18px">↺ Repetir quiz</button></div></section>
+
+<section id="faq"><div class="reveal"><div class="eyebrow">11 / Preguntas frecuentes</div><h2 class="title">Dudas del <span>universo</span></h2><p class="subtitle">Respuestas rápidas a preguntas comunes sobre estos objetos extremos.</p></div>
+<div class="accordion reveal">
+<div class="acc"><button>¿Un agujero negro puede tragarse toda la Tierra? <span class="plus">+</span></button><div class="body">No es una aspiradora cósmica. La gravedad depende de la masa y la distancia. Un agujero negro con la masa del Sol, colocado en su lugar, produciría una órbita terrestre similar, aunque sin la luz y el calor solar.</div></div>
+<div class="acc"><button>¿Qué vería una persona que cae? <span class="plus">+</span></button><div class="body">Dependería de la masa, la rotación y el entorno. En un agujero negro supermasivo, las fuerzas de marea en el horizonte podrían ser relativamente pequeñas. En uno de masa estelar podrían ser enormes.</div></div>
+<div class="acc"><button>¿Los agujeros negros duran para siempre? <span class="plus">+</span></button><div class="body">Según la predicción de Hawking, pueden perder energía mediante radiación y evaporarse en escalas de tiempo extraordinariamente largas. Para los agujeros negros astrofísicos, ese proceso sería muchísimo más lento que la edad actual del universo.</div></div>
+<div class="acc"><button>¿Se puede viajar a través de uno? <span class="plus">+</span></button><div class="body">No existe evidencia de que los agujeros negros sean portales transitables. Los modelos sencillos predicen que cruzar el horizonte impide regresar al exterior y que el interior presenta condiciones extremas.</div></div>
+<div class="acc"><button>¿Cómo sabemos que existen si son oscuros? <span class="plus">+</span></button><div class="body">Por sus efectos: órbitas de estrellas, radiación del gas que cae, lentes gravitacionales, imágenes de su sombra y ondas gravitacionales de fusiones.</div></div>
+</div></section>
+
+<section><div class="callout reveal"><div><div class="eyebrow">12 / El misterio continúa</div><h2 class="title">El universo aún guarda <span>secretos</span></h2><p>¿Qué ocurre realmente en el interior? ¿Cómo se reconcilian la gravedad y la física cuántica? ¿Cómo crecieron tan rápido los agujeros negros supermasivos? Cada observación nos acerca un poco más a las respuestas.</p></div><div class="symbol">∞</div></div></section>
+</main>
+<footer><p><b>ABISMO° 2.0</b> — Explorador interactivo de agujeros negros.</p><p>Proyecto educativo realizado con HTML, CSS, JavaScript y Canvas. Las animaciones son ilustrativas.</p><p>La ciencia avanza con preguntas. Sigue explorando.</p></footer>
+
+<script>
+// Fondo estrellado con parpadeo
+const starCanvas=document.getElementById("stars"),starCtx=starCanvas.getContext("2d");let stars=[],W=innerWidth,H=innerHeight;
+function sizeStars(){W=innerWidth;H=innerHeight;starCanvas.width=W*devicePixelRatio;starCanvas.height=H*devicePixelRatio;starCanvas.style.width=W+"px";starCanvas.style.height=H+"px";starCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);stars=Array.from({length:Math.min(520,Math.floor(W*H/3500))},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.15,a:Math.random()*.75+.15,p:Math.random()*6.28,s:Math.random()*.014+.003}))}
+sizeStars();addEventListener("resize",sizeStars);
+function starsLoop(){starCtx.clearRect(0,0,W,H);for(const s of stars){s.p+=s.s;starCtx.beginPath();starCtx.arc(s.x,s.y,s.r,0,Math.PI*2);starCtx.fillStyle=`rgba(255,255,255,${s.a*(.65+.35*Math.sin(s.p))})`;starCtx.fill()}requestAnimationFrame(starsLoop)}starsLoop();
+
+// Polvo cósmico flotante
+const dustCanvas=document.getElementById("dust"),dustCtx=dustCanvas.getContext("2d");let dust=[];
+function sizeDust(){dustCanvas.width=innerWidth*devicePixelRatio;dustCanvas.height=innerHeight*devicePixelRatio;dustCanvas.style.width=innerWidth+"px";dustCanvas.style.height=innerHeight+"px";dustCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);dust=Array.from({length:42},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.8+.3,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25}))}
+sizeDust();addEventListener("resize",sizeDust);
+function dustLoop(){dustCtx.clearRect(0,0,innerWidth,innerHeight);for(const p of dust){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;dustCtx.beginPath();dustCtx.arc(p.x,p.y,p.r,0,Math.PI*2);dustCtx.fillStyle="rgba(161,107,255,.36)";dustCtx.fill()}requestAnimationFrame(dustLoop)}dustLoop();
+
+// Luz del cursor
+const glow=document.getElementById("glow");addEventListener("pointermove",e=>{glow.style.left=e.clientX+"px";glow.style.top=e.clientY+"px"});
+
+// Progreso de lectura y botón de regreso
+const progress=document.getElementById("progress"),topBtn=document.getElementById("topBtn");
+addEventListener("scroll",()=>{const max=document.documentElement.scrollHeight-innerHeight;progress.style.width=(max?scrollY/max*100:0)+"%";topBtn.classList.toggle("show",scrollY>550)});
+topBtn.addEventListener("click",()=>scrollTo({top:0,behavior:"smooth"}));
+
+// Menú para móviles
+const menu=document.getElementById("menu"),navlinks=document.getElementById("navlinks");
+menu.addEventListener("click",()=>navlinks.classList.toggle("open"));
+document.querySelectorAll(".navlinks a").forEach(a=>a.addEventListener("click",()=>navlinks.classList.remove("open")));
+
+// Aparición al desplazarse
+const revealObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add("visible");revealObserver.unobserve(entry.target)}}),{threshold:.1});
+document.querySelectorAll(".reveal").forEach(el=>revealObserver.observe(el));
+
+// Resaltar sección activa
+const navObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting)document.querySelectorAll(".navlinks a").forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+entry.target.id))}),{rootMargin:"-35% 0px -55% 0px"});
+document.querySelectorAll("main section[id]").forEach(s=>navObserver.observe(s));
+
+// Simulador Canvas
+const sim=document.getElementById("simCanvas"),ctx=sim.getContext("2d"),mass=document.getElementById("mass"),massValue=document.getElementById("massValue");let sw=0,sh=0,paused=false;
+function resizeSim(){const r=sim.getBoundingClientRect();sw=r.width;sh=r.height;sim.width=sw*devicePixelRatio;sim.height=sh*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+resizeSim();addEventListener("resize",resizeSim);
+function drawSim(){if(paused)return;const m=Number(mass.value)/100;massValue.textContent=`Masa visual: ${Math.round(m*100)}%`;ctx.clearRect(0,0,sw,sh);const cx=sw/2,cy=sh/2,dist=25+m*90;
+let bg=ctx.createRadialGradient(cx,cy,3,cx,cy,Math.max(sw,sh)*.7);bg.addColorStop(0,"rgba(112,43,255,.18)");bg.addColorStop(.5,"rgba(35,25,110,.05)");bg.addColorStop(1,"transparent");ctx.fillStyle=bg;ctx.fillRect(0,0,sw,sh);
+const gap=32;
+for(let x=-gap;x<sw+gap;x+=gap){ctx.beginPath();for(let y=0;y<=sh;y+=5){let dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy)+20,bend=dist*dist/(d*1.15),xx=x-dx/d*bend;y===0?ctx.moveTo(xx,y):ctx.lineTo(xx,y)}ctx.strokeStyle="#587cff2c";ctx.stroke()}
+for(let y=-gap;y<sh+gap;y+=gap){ctx.beginPath();for(let x=0;x<=sw;x+=5){let dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy)+20,bend=dist*dist/(d*1.15),yy=y-dy/d*bend;x===0?ctx.moveTo(x,yy):ctx.lineTo(x,yy)}ctx.strokeStyle="#a14dff2c";ctx.stroke()}
+ctx.save();ctx.translate(cx,cy);ctx.rotate(-.15);ctx.scale(1,.27);let disk=ctx.createRadialGradient(0,0,15,0,0,140+m*130);disk.addColorStop(0,"#fff1bdcc");disk.addColorStop(.2,"#ff9e4acc");disk.addColorStop(.45,"#ff3da66b");disk.addColorStop(.75,"#813cff30");disk.addColorStop(1,"transparent");ctx.fillStyle=disk;ctx.beginPath();ctx.arc(0,0,140+m*130,0,Math.PI*2);ctx.fill();ctx.restore();
+const r=28+m*42;let halo=ctx.createRadialGradient(cx,cy,r*.7,cx,cy,r*3);halo.addColorStop(0,"#000");halo.addColorStop(.35,"#000");halo.addColorStop(.55,"#ff64c42b");halo.addColorStop(1,"transparent");ctx.fillStyle=halo;ctx.beginPath();ctx.arc(cx,cy,r*3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#000";ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+const time=performance.now()/1000;for(let i=0;i<80;i++){let a=i/80*Math.PI*2+time*(.3+m*.8),rr=r*1.8+(i%17)*8,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr*.25;ctx.beginPath();ctx.arc(x,y,1+(i%3)*.3,0,Math.PI*2);ctx.fillStyle=`rgba(255,${110+i%120},${170+i%80},.65)`;ctx.fill()}
+requestAnimationFrame(drawSim)}
+drawSim();mass.addEventListener("input",()=>massValue.textContent=`Masa visual: ${mass.value}%`);
+document.getElementById("pauseBtn").addEventListener("click",e=>{paused=!paused;e.currentTarget.textContent=paused?"▶ Reanudar animación":"⏸ Pausar animación";if(!paused)drawSim()});
+document.getElementById("resetBtn").addEventListener("click",()=>{mass.value=50;paused=false;document.getElementById("pauseBtn").textContent="⏸ Pausar animación";massValue.textContent="Masa visual: 50%";drawSim()});
+
+// Cuestionario interactivo
+function setupQuiz(){let points=0,done=new Set();const qs=[...document.querySelectorAll(".question")];qs.forEach((q,index)=>{q.querySelectorAll(".answer").forEach((button,i)=>{button.disabled=false;button.classList.remove("correct","wrong");button.onclick=()=>{if(done.has(index))return;done.add(index);const right=Number(q.dataset.answer);if(i===right){button.classList.add("correct");points++}else{button.classList.add("wrong");q.querySelectorAll(".answer")[right].classList.add("correct")}q.querySelectorAll(".answer").forEach(b=>b.disabled=true);document.getElementById("score").textContent=`${points} / ${qs.length}`;if(done.size===qs.length)document.getElementById("scoreMsg").textContent=points===qs.length?"¡Perfecto! Has dominado el abismo.":points>=4?"¡Muy bien! Sigue explorando.":"¡Buen intento! Repasa y vuelve a intentarlo."}})});document.getElementById("score").textContent=`0 / ${qs.length}`;document.getElementById("scoreMsg").textContent=""}
+setupQuiz();document.getElementById("quizReset").addEventListener("click",setupQuiz);
+
+// Acordeones de preguntas frecuentes
+document.querySelectorAll(".acc button").forEach(button=>button.addEventListener("click",()=>{const item=button.parentElement;item.classList.toggle("open");button.querySelector(".plus").textContent=item.classList.contains("open")?"−":"+"}));
+
+// Inclinación 3D ligera de tarjetas
+document.querySelectorAll(".card,.type,.question").forEach(card=>{card.addEventListener("pointermove",e=>{if(e.pointerType==="touch")return;const r=card.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;card.style.transform=`perspective(800px) rotateX(${-y*2.5}deg) rotateY(${x*2.5}deg) translateY(-4px)`});card.addEventListener("pointerleave",()=>card.style.transform="")});
+</script>
+</body>
+</html>
